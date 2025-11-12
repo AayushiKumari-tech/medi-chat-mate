@@ -2,63 +2,52 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Doctor {
   id: string;
   name: string;
   specialty: string;
-  days: string;
-  hours: string;
-  availability: string;
+  available_days: string;
+  start_hour: number;
+  end_hour: number;
 }
 
-const doctors: Doctor[] = [
-  {
-    id: "1",
-    name: "Dr. Sarah Johnson",
-    specialty: "Cardiology",
-    days: "Mon - Fri",
-    hours: "9:00 AM - 5:00 PM",
-    availability: "Available",
-  },
-  {
-    id: "2",
-    name: "Dr. Michael Chen",
-    specialty: "Orthopedics",
-    days: "Mon - Thu",
-    hours: "10:00 AM - 6:00 PM",
-    availability: "Available",
-  },
-  {
-    id: "3",
-    name: "Dr. Emily Rodriguez",
-    specialty: "Pediatrics",
-    days: "Tue - Sat",
-    hours: "8:00 AM - 4:00 PM",
-    availability: "Available",
-  },
-  {
-    id: "4",
-    name: "Dr. James Wilson",
-    specialty: "Neurology",
-    days: "Mon - Wed",
-    hours: "11:00 AM - 7:00 PM",
-    availability: "Limited",
-  },
-  {
-    id: "5",
-    name: "Dr. Priya Patel",
-    specialty: "General Medicine",
-    days: "Mon - Fri",
-    hours: "9:00 AM - 6:00 PM",
-    availability: "Available",
-  },
-];
-
 export const DoctorsList = () => {
+  const { data: doctors, isLoading } = useQuery({
+    queryKey: ["doctors"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("doctors")
+        .select("*")
+        .order("name");
+      
+      if (error) throw error;
+      return data as Doctor[];
+    },
+  });
+
+  if (isLoading) {
+    return (
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {[1, 2, 3].map((i) => (
+          <Card key={i} className="p-6 animate-pulse">
+            <div className="h-6 bg-muted rounded mb-2" />
+            <div className="h-4 bg-muted rounded w-2/3 mb-4" />
+            <div className="space-y-2">
+              <div className="h-4 bg-muted rounded" />
+              <div className="h-4 bg-muted rounded" />
+            </div>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {doctors.map((doctor) => (
+      {doctors?.map((doctor) => (
         <Card key={doctor.id} className="p-6 hover:shadow-medium transition-shadow">
           <div className="space-y-4">
             <div>
@@ -71,24 +60,19 @@ export const DoctorsList = () => {
             <div className="space-y-2 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-primary" />
-                <span>{doctor.days}</span>
+                <span>{doctor.available_days}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-primary" />
-                <span>{doctor.hours}</span>
+                <span>
+                  {doctor.start_hour}:00 - {doctor.end_hour}:00
+                </span>
               </div>
             </div>
 
             <div className="flex items-center justify-between pt-2">
-              <Badge
-                variant={doctor.availability === "Available" ? "default" : "secondary"}
-                className={
-                  doctor.availability === "Available"
-                    ? "bg-success text-success-foreground"
-                    : ""
-                }
-              >
-                {doctor.availability}
+              <Badge className="bg-success text-success-foreground">
+                Available
               </Badge>
               <Button size="sm">Book Now</Button>
             </div>

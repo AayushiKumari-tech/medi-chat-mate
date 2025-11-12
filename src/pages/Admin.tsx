@@ -19,60 +19,39 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ArrowLeft, Search, Filter } from "lucide-react";
-
-interface Appointment {
-  id: string;
-  patientName: string;
-  doctorName: string;
-  specialty: string;
-  date: string;
-  time: string;
-  status: "confirmed" | "pending" | "completed" | "cancelled";
-}
-
-// Mock data
-const mockAppointments: Appointment[] = [
-  {
-    id: "1",
-    patientName: "John Doe",
-    doctorName: "Dr. Sarah Johnson",
-    specialty: "Cardiology",
-    date: "2025-11-15",
-    time: "10:00 AM",
-    status: "confirmed",
-  },
-  {
-    id: "2",
-    patientName: "Jane Smith",
-    doctorName: "Dr. Michael Chen",
-    specialty: "Orthopedics",
-    date: "2025-11-15",
-    time: "2:00 PM",
-    status: "pending",
-  },
-  {
-    id: "3",
-    patientName: "Robert Brown",
-    doctorName: "Dr. Emily Rodriguez",
-    specialty: "Pediatrics",
-    date: "2025-11-14",
-    time: "11:00 AM",
-    status: "completed",
-  },
-];
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const Admin = () => {
-  const [appointments] = useState<Appointment[]>(mockAppointments);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
 
-  const filteredAppointments = appointments.filter((apt) => {
+  const { data: appointments, isLoading } = useQuery({
+    queryKey: ["appointments"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("appointments")
+        .select(`
+          *,
+          doctors (
+            name,
+            specialty
+          )
+        `)
+        .order("appointment_date", { ascending: false });
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const filteredAppointments = appointments?.filter((apt) => {
     const matchesSearch =
-      apt.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      apt.doctorName.toLowerCase().includes(searchTerm.toLowerCase());
+      apt.patient_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      apt.doctors?.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = filterStatus === "all" || apt.status === filterStatus;
     return matchesSearch && matchesFilter;
-  });
+  }) || [];
 
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
@@ -116,25 +95,25 @@ const Admin = () => {
         <div className="grid md:grid-cols-4 gap-6 mb-8">
           <Card className="p-6">
             <div className="text-3xl font-bold text-primary mb-1">
-              {appointments.length}
+              {appointments?.length || 0}
             </div>
             <div className="text-sm text-muted-foreground">Total Appointments</div>
           </Card>
           <Card className="p-6">
             <div className="text-3xl font-bold text-success mb-1">
-              {appointments.filter((a) => a.status === "confirmed").length}
+              {appointments?.filter((a) => a.status === "confirmed").length || 0}
             </div>
             <div className="text-sm text-muted-foreground">Confirmed</div>
           </Card>
           <Card className="p-6">
             <div className="text-3xl font-bold text-warning mb-1">
-              {appointments.filter((a) => a.status === "pending").length}
+              {appointments?.filter((a) => a.status === "pending").length || 0}
             </div>
             <div className="text-sm text-muted-foreground">Pending</div>
           </Card>
           <Card className="p-6">
             <div className="text-3xl font-bold text-muted-foreground mb-1">
-              {appointments.filter((a) => a.status === "completed").length}
+              {appointments?.filter((a) => a.status === "completed").length || 0}
             </div>
             <div className="text-sm text-muted-foreground">Completed</div>
           </Card>
@@ -190,7 +169,15 @@ const Admin = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredAppointments.length === 0 ? (
+                  {isLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-8">
+                        <div className="flex justify-center">
+                          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ) : filteredAppointments.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                         No appointments found
@@ -199,12 +186,12 @@ const Admin = () => {
                   ) : (
                     filteredAppointments.map((appointment) => (
                       <TableRow key={appointment.id}>
-                        <TableCell className="font-medium">#{appointment.id}</TableCell>
-                        <TableCell>{appointment.patientName}</TableCell>
-                        <TableCell>{appointment.doctorName}</TableCell>
-                        <TableCell>{appointment.specialty}</TableCell>
-                        <TableCell>{appointment.date}</TableCell>
-                        <TableCell>{appointment.time}</TableCell>
+                        <TableCell className="font-medium">#{appointment.id.slice(0, 8)}</TableCell>
+                        <TableCell>{appointment.patient_name}</TableCell>
+                        <TableCell>{appointment.doctors?.name}</TableCell>
+                        <TableCell>{appointment.doctors?.specialty}</TableCell>
+                        <TableCell>{appointment.appointment_date}</TableCell>
+                        <TableCell>{appointment.appointment_time}</TableCell>
                         <TableCell>
                           <Badge variant={getStatusBadgeVariant(appointment.status)}>
                             {appointment.status}
