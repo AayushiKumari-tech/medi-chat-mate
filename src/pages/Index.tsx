@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MessageSquare, Stethoscope, Calendar, Clock } from "lucide-react";
+import { MessageSquare, Stethoscope, Calendar, Clock, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ChatInterface } from "@/components/chat/ChatInterface";
 import { DoctorsList } from "@/components/doctors/DoctorsList";
@@ -25,6 +25,12 @@ const Index = () => {
             </Button>
             <Button variant="ghost" asChild>
               <a href="/admin">Admin</a>
+            </Button>
+            <Button variant="default" asChild>
+              <a href="/login">
+                <LogIn className="h-4 w-4 mr-2" />
+                Login
+              </a>
             </Button>
           </nav>
         </div>
