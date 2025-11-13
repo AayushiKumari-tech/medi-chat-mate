@@ -22,11 +22,22 @@ import { ArrowLeft, Search, Filter } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
+type DoctorInfo = { name: string; specialty: string };
+
+type Appointment = {
+  id: string;
+  patient_name: string;
+  appointment_date: string;
+  appointment_time: string;
+  status: string;
+  doctors?: DoctorInfo | null;
+};
+
 const Admin = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
 
-  const { data: appointments, isLoading } = useQuery({
+  const { data: appointments = [], isLoading } = useQuery<Appointment[]>({
     queryKey: ["appointments"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -45,13 +56,13 @@ const Admin = () => {
     },
   });
 
-  const filteredAppointments = appointments?.filter((apt) => {
+  const filteredAppointments = appointments.filter((apt) => {
     const matchesSearch =
       apt.patient_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      apt.doctors?.name.toLowerCase().includes(searchTerm.toLowerCase());
+      (apt.doctors?.name || "").toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = filterStatus === "all" || apt.status === filterStatus;
     return matchesSearch && matchesFilter;
-  }) || [];
+  });
 
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
@@ -95,25 +106,25 @@ const Admin = () => {
         <div className="grid md:grid-cols-4 gap-6 mb-8">
           <Card className="p-6">
             <div className="text-3xl font-bold text-primary mb-1">
-              {appointments?.length || 0}
+              {appointments.length}
             </div>
             <div className="text-sm text-muted-foreground">Total Appointments</div>
           </Card>
           <Card className="p-6">
             <div className="text-3xl font-bold text-success mb-1">
-              {appointments?.filter((a) => a.status === "confirmed").length || 0}
+              {appointments.filter((a) => a.status === "confirmed").length}
             </div>
             <div className="text-sm text-muted-foreground">Confirmed</div>
           </Card>
           <Card className="p-6">
             <div className="text-3xl font-bold text-warning mb-1">
-              {appointments?.filter((a) => a.status === "pending").length || 0}
+              {appointments.filter((a) => a.status === "pending").length}
             </div>
             <div className="text-sm text-muted-foreground">Pending</div>
           </Card>
           <Card className="p-6">
             <div className="text-3xl font-bold text-muted-foreground mb-1">
-              {appointments?.filter((a) => a.status === "completed").length || 0}
+              {appointments.filter((a) => a.status === "completed").length}
             </div>
             <div className="text-sm text-muted-foreground">Completed</div>
           </Card>
