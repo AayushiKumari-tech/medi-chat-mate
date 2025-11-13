@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { BookingDialog } from "./BookingDialog";
 
 interface Doctor {
   id: string;
@@ -15,6 +17,13 @@ interface Doctor {
 }
 
 export const DoctorsList = () => {
+  const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  const handleBookNow = (doctor: Doctor) => {
+    setSelectedDoctor(doctor);
+    setDialogOpen(true);
+  };
   const { data: doctors, isLoading } = useQuery({
     queryKey: ["doctors"],
     queryFn: async () => {
@@ -46,39 +55,49 @@ export const DoctorsList = () => {
   }
 
   return (
-    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {doctors?.map((doctor) => (
-        <Card key={doctor.id} className="p-6 hover:shadow-medium transition-shadow">
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-xl font-semibold mb-1">{doctor.name}</h3>
-              <Badge variant="secondary" className="mb-3">
-                {doctor.specialty}
-              </Badge>
-            </div>
-
-            <div className="space-y-2 text-sm text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-primary" />
-                <span>{doctor.available_days}</span>
+    <>
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {doctors?.map((doctor) => (
+          <Card key={doctor.id} className="p-6 hover:shadow-medium transition-shadow">
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-xl font-semibold mb-1">{doctor.name}</h3>
+                <Badge variant="secondary" className="mb-3">
+                  {doctor.specialty}
+                </Badge>
               </div>
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-primary" />
-                <span>
-                  {doctor.start_hour}:00 - {doctor.end_hour}:00
-                </span>
+
+              <div className="space-y-2 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-primary" />
+                  <span>{doctor.available_days}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-primary" />
+                  <span>
+                    {doctor.start_hour}:00 - {doctor.end_hour}:00
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-2">
+                <Badge className="bg-success text-success-foreground">
+                  Available
+                </Badge>
+                <Button size="sm" onClick={() => handleBookNow(doctor)}>
+                  Book Now
+                </Button>
               </div>
             </div>
+          </Card>
+        ))}
+      </div>
 
-            <div className="flex items-center justify-between pt-2">
-              <Badge className="bg-success text-success-foreground">
-                Available
-              </Badge>
-              <Button size="sm">Book Now</Button>
-            </div>
-          </div>
-        </Card>
-      ))}
-    </div>
+      <BookingDialog
+        doctor={selectedDoctor}
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+      />
+    </>
   );
 };
