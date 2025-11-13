@@ -18,18 +18,18 @@ const Index = () => {
             </div>
             <h1 className="text-2xl font-bold text-gradient">HospitalCare</h1>
           </div>
-          <nav className="flex items-center gap-4">
-            <Button variant="ghost" onClick={() => setShowChat(true)}>
+          <nav className="flex items-center gap-2 md:gap-4">
+            <Button variant="ghost" size="sm" className="hidden sm:flex" onClick={() => setShowChat(true)}>
               <MessageSquare className="h-4 w-4 mr-2" />
               Chat
             </Button>
-            <Button variant="ghost" asChild>
+            <Button variant="ghost" size="sm" className="hidden sm:flex" asChild>
               <a href="/admin">Admin</a>
             </Button>
-            <Button variant="default" asChild>
-              <a href="/login">
+            <Button variant="default" size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground" asChild>
+              <a href="/login" className="flex items-center">
                 <LogIn className="h-4 w-4 mr-2" />
-                Login
+                <span>Login</span>
               </a>
             </Button>
           </nav>
